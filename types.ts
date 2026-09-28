@@ -6,6 +6,18 @@ export interface ExpenseItem {
   note?: string;
 }
 
+export interface CategoryBudget {
+  category: string;
+  limit: number;
+}
+
+export interface FinancialGoal {
+  name: string;
+  target: number;
+  saved: number;
+  targetDate?: string;
+}
+
 export interface BudgetData {
   income: number;
   currency: string;
