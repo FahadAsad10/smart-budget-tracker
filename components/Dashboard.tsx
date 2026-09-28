@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Sparkles, ArrowRight, Loader2, Wallet, TrendingUp, AlertTriangle, Target } from 'lucide-react';
 import { ExpenseItem, Currency, BudgetData, CategoryBudget, FinancialGoal } from '../types';
-import { getFinancialAdvice } from '../services/geminiService';
 
 interface DashboardProps {
   income: number;
@@ -17,7 +16,6 @@ const COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#63
 
 export const Dashboard: React.FC<DashboardProps> = ({ income, currency, expenses, goal, budgets, financialGoals }) => {
   const [advice, setAdvice] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const month = new Date().toISOString().slice(0, 7);
   const monthExpenses = useMemo(() => expenses.filter((e) => e.date.startsWith(month)), [expenses, month]);
   const total = monthExpenses.reduce((s, e) => s + e.amount, 0);
@@ -44,11 +42,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ income, currency, expenses
     return { ...b, spent, percent: b.limit ? (spent/b.limit)*100 : 0 };
   }).filter((b) => b.percent > 80);
 
-  const generateAdvice = async () => {
-    setLoading(true);
-    const data: BudgetData = { income, currency, expenses: monthExpenses, financialGoal: goal };
-    setAdvice(await getFinancialAdvice(data));
-    setLoading(false);
+  const generateAdvice = () => {
+    const tips: string[] = [];
+    if (!income) tips.push('Start by adding your monthly income so the dashboard can calculate your available balance.');
+    if (income && total > income) tips.push('Your spending is above your recorded income this month. Review your largest categories first.');
+    if (income && total <= income && (remaining / income) < 0.1) tips.push('Less than 10% of your income is currently remaining. Consider tightening one or two flexible categories.');
+    if (income && total <= income && (remaining / income) >= 0.3) tips.push('More than 30% of your income remains. Keep tracking so that buffer does not disappear unnoticed.');
+    if (overspending.length) tips.push(overspending[0].category + ' is at ' + overspending[0].percent.toFixed(0) + '% of its budget.');
+    if (categoryData.length) { const largest = [...categoryData].sort((a,b)=>b.value-a.value)[0]; tips.push(largest.name + ' is your largest spending category at ' + currency + largest.value.toLocaleString() + '.'); }
+    if (goal) tips.push('Your current goal is: ' + goal + '. Connect it to a specific monthly saving amount.');
+    setAdvice((tips.length ? tips : ['Add a few transactions and budgets to get more useful spending insights.']).slice(0,4).join('\\n\\n'));
   };
 
   useEffect(() => setAdvice(null), [income, currency, goal, expenses]);
@@ -90,8 +93,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ income, currency, expenses
       </div>
 
       <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl shadow-lg text-white p-6">
-        <div className="flex items-center justify-between gap-4"><h2 className="text-lg font-bold flex items-center"><Sparkles className="mr-2 text-yellow-300" size={20}/>AI Budget Coach</h2>{!advice && !loading && <button onClick={generateAdvice} disabled={!income || !monthExpenses.length} className="bg-white/20 hover:bg-white/30 disabled:opacity-40 px-4 py-2 rounded-lg flex items-center gap-2 text-sm">Analyze my budget <ArrowRight size={16}/></button>}</div>
-        {loading && <div className="py-8 text-center"><Loader2 className="animate-spin mx-auto mb-2"/><p className="text-indigo-100 text-sm">Finding useful patterns in your spending...</p></div>}
+        <div className="flex items-center justify-between gap-4"><h2 className="text-lg font-bold flex items-center"><Sparkles className="mr-2 text-yellow-300" size={20}/>AI Budget Coach</h2>{!advice && <button onClick={generateAdvice} disabled={!income && !monthExpenses.length} className="bg-white/20 hover:bg-white/30 disabled:opacity-40 px-4 py-2 rounded-lg flex items-center gap-2 text-sm">Analyze my budget <ArrowRight size={16}/></button>}</div>
         {advice && <div className="mt-5 bg-white/10 rounded-xl p-5 whitespace-pre-wrap text-sm leading-6">{advice}<button onClick={generateAdvice} className="block mt-4 text-xs underline text-white/70">Refresh</button></div>}
         {!advice && !loading && <p className="text-indigo-100 text-sm mt-3">Your AI coach can identify spending patterns and suggest practical next steps based on this month's numbers.</p>}
       </div>
