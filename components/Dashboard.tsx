@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { Sparkles, ArrowRight, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowRight, Loader2, TrendingDown, Wallet, Target } from 'lucide-react';
 import { ExpenseItem, Currency, BudgetData } from '../types';
 import { getFinancialAdvice } from '../services/geminiService';
 
@@ -17,108 +17,113 @@ export const Dashboard: React.FC<DashboardProps> = ({ income, currency, expenses
   const [advice, setAdvice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
-  const balance = income - totalExpenses;
-  const savingsRate = income > 0 ? ((balance / income) * 100).toFixed(1) : '0';
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const monthExpenses = useMemo(
+    () => expenses.filter((expense) => expense.date.startsWith(currentMonth)),
+    [expenses, currentMonth]
+  );
 
-  // Group expenses by category for the chart
-  const chartData = Object.values(expenses.reduce((acc, curr) => {
-    if (!acc[curr.category]) {
-      acc[curr.category] = { name: curr.category, value: 0 };
-    }
-    acc[curr.category].value += curr.amount;
-    return acc;
-  }, {} as Record<string, { name: string; value: number }>));
+  const totalExpenses = monthExpenses.reduce((sum, item) => sum + item.amount, 0);
+  const balance = income - totalExpenses;
+  const spentPercent = income > 0 ? (totalExpenses / income) * 100 : 0;
+
+  const chartData = useMemo(() => Object.values(
+    monthExpenses.reduce((acc, item) => {
+      if (!acc[item.category]) acc[item.category] = { name: item.category, value: 0 };
+      acc[item.category].value += item.amount;
+      return acc;
+    }, {} as Record<string, { name: string; value: number }>)
+  ), [monthExpenses]);
 
   const generateAdvice = async () => {
     setLoading(true);
-    const budgetData: BudgetData = {
+    const data: BudgetData = {
       income,
       currency,
-      expenses,
+      expenses: monthExpenses,
       financialGoal: goal
     };
-    const response = await getFinancialAdvice(budgetData);
-    setAdvice(response);
+    setAdvice(await getFinancialAdvice(data));
     setLoading(false);
   };
 
   useEffect(() => {
-      // Clear advice if inputs change drastically to encourage re-generation
-      if (advice) setAdvice(null);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [income, expenses.length, goal]);
-
-  const hasData = expenses.length > 0 && income > 0;
-
-  if (!hasData) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-        <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-          <Sparkles className="text-slate-400 h-8 w-8" />
-        </div>
-        <h3 className="text-lg font-medium text-slate-800 mb-2">Ready to Visualize?</h3>
-        <p className="text-slate-500 max-w-xs">
-          Enter your income and at least one expense to see your financial breakdown and AI insights.
-        </p>
-      </div>
-    );
-  }
+    setAdvice(null);
+  }, [income, currency, goal, expenses]);
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-          <p className="text-sm text-slate-500 font-medium mb-1">Total Expenses</p>
+          <div className="flex items-center gap-2 text-sm text-slate-500 font-medium mb-1">
+            <TrendingDown size={16} /> Spent this month
+          </div>
           <p className="text-2xl font-bold text-slate-900">{currency}{totalExpenses.toLocaleString()}</p>
         </div>
-        <div className={`p-5 rounded-2xl shadow-sm border border-slate-100 ${balance >= 0 ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
-          <p className={`text-sm font-medium mb-1 ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>Remaining Balance</p>
+
+        <div className={`p-5 rounded-2xl shadow-sm border ${balance >= 0 ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+          <div className={`flex items-center gap-2 text-sm font-medium mb-1 ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <Wallet size={16} /> Remaining
+          </div>
           <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
             {currency}{balance.toLocaleString()}
           </p>
         </div>
       </div>
 
-      {/* Chart */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <h3 className="text-lg font-semibold text-slate-800 mb-6">Expense Breakdown</h3>
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={80}
-                paddingAngle={5}
-                dataKey="value"
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip 
-                formatter={(value: number) => `${currency}${value.toLocaleString()}`}
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-              />
-              <Legend verticalAlign="bottom" height={36}/>
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="mt-4 text-center">
-          <span className="inline-block bg-blue-50 text-blue-700 text-sm font-medium px-3 py-1 rounded-full">
-            Savings Rate: {savingsRate}%
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-slate-800">Monthly health</h3>
+          <span className={`text-sm font-semibold px-3 py-1 rounded-full ${spentPercent <= 100 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            {income > 0 ? spentPercent.toFixed(1) + '% spent' : 'Add income'}
           </span>
+        </div>
+        <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all ${spentPercent <= 100 ? 'bg-blue-500' : 'bg-red-500'}`}
+            style={{ width: Math.min(100, Math.max(0, spentPercent)) + '%' }}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-slate-500 mt-2">
+          <span>{monthExpenses.length} transaction{monthExpenses.length === 1 ? '' : 's'}</span>
+          <span>{income > 0 ? (Math.max(0, 100 - spentPercent)).toFixed(1) + '% income left' : ''}</span>
         </div>
       </div>
 
-      {/* AI Advisor Section */}
+      {chartData.length > 0 && (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 className="text-lg font-semibold text-slate-800 mb-6">Expense Breakdown</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={chartData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                  {chartData.map((entry, index) => (
+                    <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value: number) => currency + Number(value).toLocaleString()}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Legend verticalAlign="bottom" height={36} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {goal && (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div className="flex items-center gap-2 text-slate-700 font-semibold mb-2">
+            <Target size={18} /> Current goal
+          </div>
+          <p className="text-slate-600 text-sm">{goal}</p>
+        </div>
+      )}
+
       <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl shadow-lg text-white overflow-hidden">
         <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between gap-4 mb-4">
             <h3 className="text-lg font-bold flex items-center">
               <Sparkles className="mr-2 text-yellow-300" size={20} />
               AI Financial Advisor
@@ -127,6 +132,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ income, currency, expenses
               <button
                 onClick={generateAdvice}
                 className="bg-white/20 hover:bg-white/30 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center"
+                disabled={!income || monthExpenses.length === 0}
               >
                 Get Insights <ArrowRight size={16} className="ml-2" />
               </button>
@@ -136,28 +142,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ income, currency, expenses
           {loading && (
             <div className="flex flex-col items-center justify-center py-8">
               <Loader2 className="animate-spin h-8 w-8 text-white/80 mb-3" />
-              <p className="text-white/80 text-sm">Analyzing your budget...</p>
+              <p className="text-white/80 text-sm">Analyzing this month's budget...</p>
             </div>
           )}
 
           {advice && (
-            <div className="animate-fade-in bg-white/10 rounded-xl p-5 backdrop-blur-sm">
-               <div 
-                 className="prose prose-invert prose-sm max-w-none [&>ul]:list-disc [&>ul]:pl-5 [&>li]:mb-2"
-                 dangerouslySetInnerHTML={{ __html: advice }} 
-               />
-               <button 
+            <div className="bg-white/10 rounded-xl p-5 backdrop-blur-sm">
+              <div className="whitespace-pre-wrap text-sm leading-6">{advice}</div>
+              <button
                 onClick={generateAdvice}
                 className="mt-4 text-xs text-white/60 hover:text-white underline"
-               >
-                 Refresh Advice
-               </button>
+              >
+                Refresh Advice
+              </button>
             </div>
           )}
-          
+
           {!advice && !loading && (
             <p className="text-indigo-100 text-sm">
-              Click "Get Insights" to receive personalized tips based on your {currency}{income.toLocaleString()} income and spending habits.
+              {income && monthExpenses.length
+                ? 'Get personalized suggestions based on this month’s spending and your goal.'
+                : 'Add income and at least one current-month transaction to unlock AI advice.'}
             </p>
           )}
         </div>
