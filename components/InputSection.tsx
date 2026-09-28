@@ -11,6 +11,7 @@ interface InputSectionProps {
   setExpenses: React.Dispatch<React.SetStateAction<ExpenseItem[]>>;
   goal: string;
   setGoal: (val: string) => void;
+  compact?: boolean;
 }
 
 const getToday = () => new Date().toISOString().slice(0, 10);
@@ -23,7 +24,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
   expenses,
   setExpenses,
   goal,
-  setGoal
+  setGoal,
+  compact = false
 }) => {
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
   const [amount, setAmount] = useState('');
@@ -61,11 +63,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-          <span className="bg-green-100 text-green-700 p-1.5 rounded-md mr-2 text-sm">Step 1</span>
-          Monthly Income
-        </h2>
+{!compact && <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">\n        <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">\n          <span className="bg-green-100 text-green-700 p-1.5 rounded-md mr-2 text-sm">Step 1</span>\n          Monthly Income\n        </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -101,10 +99,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <div className="flex items-center justify-between gap-4 mb-4">
+      </section>}\n\n      {!compact && <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">\n        <div className="flex items-center justify-between gap-4 mb-4">
           <h2 className="text-lg font-semibold text-slate-800 flex items-center">
             <span className="bg-red-100 text-red-700 p-1.5 rounded-md mr-2 text-sm">Step 2</span>
             Add Transactions
@@ -223,7 +218,5 @@ export const InputSection: React.FC<InputSectionProps> = ({
           className="block w-full rounded-lg border-slate-300 border p-3 focus:ring-2 focus:ring-blue-500 outline-none"
           placeholder="e.g. Save 30,000 for a new laptop by December"
         />
-      </section>
-    </div>
-  );
+      </section>}\n    </div>\n  );
 };
