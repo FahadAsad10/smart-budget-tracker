@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Sparkles, ArrowRight, Loader2, Wallet, TrendingUp, AlertTriangle, Target } from 'lucide-react';
-import { ExpenseItem, Currency, BudgetData, CategoryBudget, FinancialGoal } from '../types';
+import { Sparkles, ArrowRight, Wallet, TrendingUp, AlertTriangle, Target } from 'lucide-react';
+import { ExpenseItem, Currency, CategoryBudget, FinancialGoal } from '../types';
 
 interface DashboardProps {
   income: number;
@@ -95,7 +95,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ income, currency, expenses
       <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl shadow-lg text-white p-6">
         <div className="flex items-center justify-between gap-4"><h2 className="text-lg font-bold flex items-center"><Sparkles className="mr-2 text-yellow-300" size={20}/>AI Budget Coach</h2>{!advice && <button onClick={generateAdvice} disabled={!income && !monthExpenses.length} className="bg-white/20 hover:bg-white/30 disabled:opacity-40 px-4 py-2 rounded-lg flex items-center gap-2 text-sm">Analyze my budget <ArrowRight size={16}/></button>}</div>
         {advice && <div className="mt-5 bg-white/10 rounded-xl p-5 whitespace-pre-wrap text-sm leading-6">{advice}<button onClick={generateAdvice} className="block mt-4 text-xs underline text-white/70">Refresh</button></div>}
-        {!advice && !loading && <p className="text-indigo-100 text-sm mt-3">Your AI coach can identify spending patterns and suggest practical next steps based on this month's numbers.</p>}
+        {!advice && <p className="text-indigo-100 text-sm mt-3">Your AI coach can identify spending patterns and suggest practical next steps based on this month's numbers.</p>}
       </div>
     </div>
   );
