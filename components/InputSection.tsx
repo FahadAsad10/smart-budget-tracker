@@ -39,20 +39,24 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
   return (
     <div className="space-y-6">
-      {!compact && (
-        <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h2 className="text-lg font-semibold text-slate-800 mb-4">Monthly Income</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <select value={currency} onChange={(e) => setCurrency(e.target.value as Currency)} className="rounded-lg border border-slate-300 p-2.5">
-              {Object.entries(Currency).map(([key, value]) => <option key={key} value={value}>{key} ({value})</option>)}
-            </select>
-            <div className="md:col-span-3 relative">
-              <span className="absolute left-3 top-2.5 text-slate-500">{currency}</span>
-              <input type="number" min="0" value={income || ''} onChange={(e) => setIncome(Math.max(0, Number(e.target.value) || 0))} className="pl-10 w-full rounded-lg border border-slate-300 p-2.5" placeholder="e.g. 50000" />
-            </div>
+      <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-800">Monthly Income</h2>
+            <p className="text-sm text-slate-500 mt-1">Set the income you want to use for this month's budget.</p>
           </div>
-        </section>
-      )}
+          <span className="text-sm font-semibold text-blue-600">{currency}{income.toLocaleString()}</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <select value={currency} onChange={(e) => setCurrency(e.target.value as Currency)} className="rounded-lg border border-slate-300 p-2.5">
+            {Object.entries(Currency).map(([key, value]) => <option key={key} value={value}>{key} ({value})</option>)}
+          </select>
+          <div className="md:col-span-3 relative">
+            <span className="absolute left-3 top-2.5 text-slate-500">{currency}</span>
+            <input type="number" min="0" value={income || ''} onChange={(e) => setIncome(Math.max(0, Number(e.target.value) || 0))} className="pl-10 w-full rounded-lg border border-slate-300 p-2.5" placeholder="e.g. 50000" />
+          </div>
+        </div>
+      </section>
 
       <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div className="flex items-center justify-between gap-4 mb-4">
