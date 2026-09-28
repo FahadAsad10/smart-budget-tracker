@@ -2,6 +2,8 @@ export interface ExpenseItem {
   id: string;
   category: string;
   amount: number;
+  date: string;
+  note?: string;
 }
 
 export interface BudgetData {
@@ -31,4 +33,4 @@ export const CATEGORIES = [
   "Debt Repayment",
   "Education",
   "Other"
-];
+] as const;
