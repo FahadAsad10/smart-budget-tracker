@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { LayoutDashboard, Receipt, Target, Settings, Plus, Trash2, Sparkles, TrendingUp, Wallet, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Receipt, Target, Settings, Plus, Trash2, Wallet } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
 import { InputSection } from './components/InputSection';
 import { Currency, ExpenseItem, CategoryBudget, FinancialGoal, CATEGORIES } from './types';
@@ -22,7 +22,7 @@ function App() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = sessionStorage.getItem(STORAGE_KEY);
       if (!saved) return;
       const data = JSON.parse(saved);
       setIncome(data.income ?? 0);
@@ -37,7 +37,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
       income, currency, expenses, goal, budgets, financialGoals
     }));
   }, [income, currency, expenses, goal, budgets, financialGoals]);
